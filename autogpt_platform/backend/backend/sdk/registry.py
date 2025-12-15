@@ -218,18 +218,17 @@ class AutoRegistry:
                 if hasattr(store_class, "get_all_creds"):
                     original_get_all_creds = store_class.get_all_creds
 
-                    async def patched_get_all_creds(self, user_id: str):
+                    async def patched_get_all_creds(self,user_id:str):
                         # Get original credentials
-                        original_creds = await original_get_all_creds(self, user_id)
+                        original_creds=await original_get_all_creds(self,user_id)
 
                         # Add SDK-registered credentials
-                        sdk_creds = cls.get_all_credentials()
+                        sdk_creds=cls.get_all_credentials()
 
                         # Combine credentials, avoiding duplicates by ID
-                        existing_ids = {c.id for c in original_creds}
+                        existing_ids={c.id for c in original_creds}
                         for cred in sdk_creds:
-                            if cred.id not in existing_ids:
-                                original_creds.append(cred)
+                            if cred.id not in existing_ids:original_creds.append(cred)
 
                         return original_creds
 
