@@ -235,7 +235,21 @@ class AutoRegistry:
 
                     store_class.get_all_creds = patched_get_all_creds
                     logger.info(
-                        "Successfully patched IntegrationCredentialsStore.get_all_creds"
+                        "Patched IntegrationCredentialsStore.get_all_creds",
+                        extra={
+                            "json_fields": {
+                                "event": "patch_credentials_store_success",
+                                "target": "IntegrationCredentialsStore.get_all_creds",
+                            }
+                        },
                     )
         except Exception as e:
-            logging.warning(f"Failed to patch credentials store: {e}")
+            logger.warning(
+                "Failed to patch credentials store",
+                extra={
+                    "json_fields": {
+                        "event": "patch_credentials_store_failed",
+                        "error": str(e),
+                    }
+                },
+            )
