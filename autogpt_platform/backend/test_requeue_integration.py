@@ -9,6 +9,8 @@ import time
 from threading import Event
 from typing import List
 
+import pytest
+
 from backend.data.rabbitmq import SyncRabbitMQ
 from backend.executor.utils import create_execution_queue_config
 
@@ -20,7 +22,6 @@ class QueueOrderTester:
         self.received_messages: List[dict] = []
         self.stop_consuming = Event()
         self.queue_client = SyncRabbitMQ(create_execution_queue_config())
-        self.queue_client.connect()
 
         # Use a dedicated test queue name to avoid conflicts
         self.test_queue_name = "test_requeue_ordering"
@@ -29,6 +30,13 @@ class QueueOrderTester:
 
     def setup_queue(self):
         """Set up a dedicated test queue for testing."""
+        try:
+            self.queue_client.connect()
+        except Exception as exc:
+            pytest.skip(
+                f"RabbitMQ not available for integration test: {type(exc).__name__}"
+            )
+
         channel = self.queue_client.get_channel()
 
         # Declare test exchange
@@ -125,8 +133,11 @@ class QueueOrderTester:
             # Cancel the consumer
             try:
                 channel.cancel()
-            except Exception:
-                pass
+            except Exception as exc:
+                print(
+                    "⚠️ Consumer cancel raised an error "
+                    f"({type(exc).__name__}); continuing cleanup"
+                )
         else:
             # No messages in queue - this might be expected for some tests
             pass
